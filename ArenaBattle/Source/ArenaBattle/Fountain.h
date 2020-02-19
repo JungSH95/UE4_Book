@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+//#include "CoreMinimal.h"
+#include "EngineMinimal.h"
+
 #include "GameFramework/Actor.h"
 #include "Fountain.generated.h"
 
@@ -23,4 +25,19 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// VisibleAnywhere : 컴포넌트 속성을 편집하기 위해 필요한 키워드
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent *Body;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent *Water;
+
+	UPROPERTY(VisibleAnywhere)
+	UPointLightComponent *Light;
+
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent *Splash;
+
+	UPROPERTY(EditAnywhere, Category=ID)
+	int32 ID;
 };
