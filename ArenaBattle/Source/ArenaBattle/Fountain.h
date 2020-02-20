@@ -3,7 +3,9 @@
 #pragma once
 
 //#include "CoreMinimal.h"
-#include "EngineMinimal.h"
+//#include "EngineMinimal.h"
+
+#include "ArenaBattle.h"
 
 #include "GameFramework/Actor.h"
 #include "Fountain.generated.h"
