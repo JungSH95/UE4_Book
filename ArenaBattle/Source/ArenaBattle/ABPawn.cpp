@@ -30,6 +30,26 @@ AABPawn::AABPawn()
 
 	if (SK_CARDBOARD.Succeeded())
 		Mesh->SetSkeletalMesh(SK_CARDBOARD.Object);
+
+	/*
+	에셋을 로드하는 명령어 : LoadObject<타입>
+
+	Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+	UAnimationAsset*  AnimAsset = LoadObject<UAnimationAsset>(nullptr, TEXT("/Game/Animations/WarriorIdle"));
+
+	코드로 애니메이션을 지정하는 방법으로는 게임의 규모가 커지면 애니메이션을 재생하는 것에 관리적인 한계가 발생
+	-> 애니메이션 블루프린트를 사용하여 해결
+
+	=> 애니메이션 블루프린트 시스템 : 프로그래밍이 아닌 시각적 도구로 개발하도록 설계돼 있는 것이 특징
+	*/
+
+
+	Mesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+
+	static ConstructorHelpers::FClassFinder<UAnimInstance> WARRIOR_ANIM(TEXT("/Game/Animations/WarriorAnimBlueprint"));
+
+	if (WARRIOR_ANIM.Succeeded())
+		Mesh->SetAnimInstanceClass(WARRIOR_ANIM.Class);
 }
 
 // Called when the game starts or when spawned
