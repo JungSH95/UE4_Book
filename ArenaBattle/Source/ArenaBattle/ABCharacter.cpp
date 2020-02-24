@@ -35,6 +35,9 @@ AABCharacter::AABCharacter()
 
 	ArmLengthSpeed = 3.0f;
 	ArmRotationSpeed = 10.0f;
+
+	// 점프값 설정 (420 : 기본값)
+	GetCharacterMovement()->JumpZVelocity = 800.0f;
 }
 
 // Called when the game starts or when spawned
@@ -139,6 +142,11 @@ void AABCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 	PlayerInputComponent->BindAction(TEXT("ViewChange"), EInputEvent::IE_Pressed, this,
 		&AABCharacter::ViewChange);
+
+	// ACharacter 클래스에 Jump라는 멤버 함수가 있다.
+	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this,
+		&ACharacter::Jump);
+
 
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AABCharacter::UpDown);
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AABCharacter::LeftRight);
