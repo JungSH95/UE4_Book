@@ -32,6 +32,9 @@ AABCharacter::AABCharacter()
 		GetMesh()->SetAnimInstanceClass(WARRIOR_ANIM.Class);
 
 	SetControlMode(EControlMode::DIABLO);
+
+	ArmLengthSpeed = 3.0f;
+	ArmRotationSpeed = 10.0f;
 }
 
 // Called when the game starts or when spawned
@@ -51,10 +54,11 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 	{
 	case EControlMode::GTA:
 		// 카메라 지지대 길이
-		SpringArm->TargetArmLength = 450.0f;
+		//SpringArm->TargetArmLength = 450.0f;
+		ArmLengthTo = 450.0f;
 
 		// 캐릭터의 회전
-		SpringArm->SetRelativeRotation(FRotator::ZeroRotator);
+		//SpringArm->SetRelativeRotation(FRotator::ZeroRotator);
 
 		// 폰의 로테이션 제어 설정
 		SpringArm->bUsePawnControlRotation = true;
@@ -75,8 +79,11 @@ void AABCharacter::SetControlMode(EControlMode NewControlMode)
 		GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 		break;
 	case EControlMode::DIABLO:
-		SpringArm->TargetArmLength = 800.0f;
-		SpringArm->SetRelativeRotation(FRotator(-45.0f, 0.0f, 0.0f));
+		//SpringArm->TargetArmLength = 800.0f;
+		//SpringArm->SetRelativeRotation(FRotator(-45.0f, 0.0f, 0.0f));
+
+		ArmLengthTo = 800.0f;
+		ArmRotationTo = FRotator(-45.0f, 0.0f, 0.0f);
 
 		SpringArm->bUsePawnControlRotation = false;
 		SpringArm->bInheritPitch = false;
@@ -99,6 +106,19 @@ void AABCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// FInterpTo() 함수를 통해 지정한 속력으로 목표 지점까지 진행하되,
+	// 목표 지점까지 도달하면 그 값에서 멈추는 기능
+	SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, ArmLengthTo,
+		DeltaTime, ArmLengthSpeed);
+	
+	switch (CurrentControlMode)
+	{
+	case EControlMode::DIABLO:
+		SpringArm->RelativeRotation = FMath::RInterpTo(SpringArm->RelativeRotation,
+			ArmRotationTo, DeltaTime, ArmRotationSpeed);
+		break;
+	}
+
 	switch (CurrentControlMode)
 	{
 	case EControlMode::DIABLO:
@@ -116,6 +136,9 @@ void AABCharacter::Tick(float DeltaTime)
 void AABCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAction(TEXT("ViewChange"), EInputEvent::IE_Pressed, this,
+		&AABCharacter::ViewChange);
 
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AABCharacter::UpDown);
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AABCharacter::LeftRight);
@@ -179,6 +202,22 @@ void AABCharacter::Turn(float NewAxisValue)
 	{
 	case EControlMode::GTA:
 		AddControllerYawInput(NewAxisValue);
+		break;
+	}
+}
+
+// Shift + V 키를 누를 때마다 캐릭터의 컨트롤 변경
+void AABCharacter::ViewChange()
+{
+	switch (CurrentControlMode)
+	{
+	case EControlMode::GTA:
+		GetController()->SetControlRotation(GetActorRotation());
+		SetControlMode(EControlMode::DIABLO);
+		break;
+	case EControlMode::DIABLO:
+		GetController()->SetControlRotation(SpringArm->RelativeRotation);
+		SetControlMode(EControlMode::GTA);
 		break;
 	}
 }

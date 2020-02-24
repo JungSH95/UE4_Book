@@ -40,7 +40,11 @@ protected:
 
 	FVector DirctionToMove = FVector::ZeroVector;
 
-	void SetControlMode(int32 ControlMode);
+	// 캐릭터 컨트롤 변경할 때마다 부드럽게 변경하기 위한 기능 추가
+	float ArmLengthTo = 0.0f;
+	FRotator ArmRotationTo = FRotator::ZeroRotator;
+	float ArmLengthSpeed = 0.0f;
+	float ArmRotationSpeed = 0.0f;
 
 public:	
 	// Called every frame
@@ -60,4 +64,6 @@ private:
 	void LeftRight(float NewAxisValue);
 	void LookUp(float NewAxisValue);
 	void Turn(float NewAxisValue);
+
+	void ViewChange();
 };
