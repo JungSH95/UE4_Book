@@ -49,6 +49,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	
+	virtual void PostInitializeComponents() override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -66,4 +68,53 @@ private:
 	void Turn(float NewAxisValue);
 
 	void ViewChange();
+	void Attack();
+
+	/*
+	언리얼에서 델리게이트는 C++ 객체에만 사용할 수 있는 델리게이트와
+	C++, 블루프린트 객체 모두 사용할 수 있는 델리게이트로 나뉜다.
+
+	블루프린트 오브젝트 -> 멤버 함수에 대한 정보를 저장하고 로딩하는 직렬화 메커니즘이
+						   들어있기 때문에 일반 C++ 언어가 관리하는 방법으로 멤버 함수를
+						   관리할 수 없다.
+	=> 때문에 블루프린트와 관련된 C++ 함수는 모두 UFUNCTION 매크로를 사용해야 한다.
+
+	: 이렇게 블루프린트 객체와도 연동하는 델리게이트를 언리얼 엔진에서는
+	  다이내믹 델리게이트라고 한다.
+	*/
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	// 공격 시작과 끝날 때 관련 속성을 지정하는 함수
+	void AttackStartComboState();
+	void AttackEndComboState();
+
+private:
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack,
+		Meta = (AllowPrivateAccess = true))
+	bool IsAttacking;
+
+	// 다음 콤보로의 이동 가능 여부
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack,
+		Meta = (AllowPrivateAccess = true))
+	bool CanNextCombo;
+
+	// 콤보 입력 여부
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack,
+		Meta = (AllowPrivateAccess = true))
+	bool IsComboInputOn;
+
+	// 현재 콤보 카운터
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack,
+		Meta = (AllowPrivateAccess = true))
+	int32 CurrentCombo;
+
+	// 콤보 카운터의 최대치
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack,
+		Meta = (AllowPrivateAccess = true))
+	int32 MaxCombo;
+
+	// 자주 사용하므로 멤버 변수로 선언
+	UPROPERTY()
+	class UABAnimInstance* ABAnim;
 };
