@@ -4,6 +4,9 @@
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
 
+// 디버그 드로잉 : 다양한 그리기 함수들이 선언되있음. -> ex) 공격 범위를 시각적으로 표현
+#include "DrawDebugHelpers.h"
+
 // Sets default values
 AABCharacter::AABCharacter()
 {
@@ -44,6 +47,12 @@ AABCharacter::AABCharacter()
 
 	MaxCombo = 4;
 	AttackEndComboState();
+
+	// 캐릭터의 캡슐 컴포넌트에 있는 콜리전 프리셋을 기존 Pawn에서 ABCharacter로 설정
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("ABCharacter"));
+
+	AttackRange = 200.0f;
+	AttackRadius = 50.0f;
 }
 
 // Called when the game starts or when spawned
@@ -163,6 +172,23 @@ void AABCharacter::PostInitializeComponents()
 			ABAnim->JumpToAttackMontageSection(CurrentCombo);
 		}
 	});
+
+	ABAnim->OnAttackHitCheck.AddUObject(this, &AABCharacter::AttackCheck);
+}
+
+float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+	class AController* EventInstigator, AActor* DamageCauser)
+{
+	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	ABLOG(Warning, TEXT("Actor : %s took Damage : %f"), *GetName(), FinalDamage);
+	
+	if (FinalDamage > 0.0f)
+	{
+		ABAnim->SetDeadAnim();
+		SetActorEnableCollision(false);
+	}
+
+	return FinalDamage;
 }
 
 // Called to bind functionality to input
@@ -317,4 +343,71 @@ void AABCharacter::AttackEndComboState()
 	IsComboInputOn = false;
 	CanNextCombo = false;
 	CurrentCombo = 0;
+}
+
+void AABCharacter::AttackCheck()
+{
+	// 충돌된 액터에 관련된 정보를 가질 구조체
+	FHitResult HitResult;
+
+	FCollisionQueryParams Params(NAME_None, false, this);
+
+	bool bResult = GetWorld()->SweepSingleByChannel(
+		HitResult,	
+
+		// 도형의 탐색 영역
+		GetActorLocation(),
+		GetActorLocation() + GetActorForwardVector() * AttackRange,
+		
+		FQuat::Identity,
+
+		// Attack 트레이스 채널
+		ECollisionChannel::ECC_GameTraceChannel2,		
+
+		// 탐색할 도형 : 50cm 반지름 구체
+		FCollisionShape::MakeSphere(AttackRadius),					
+
+		// 공격 명령을 내리는 자신은 이 탐색에 감지되지 않도록 설정
+		Params);
+
+	// 공격 탐지 범위 시각적으로 표현 해주기
+#if ENABLE_DRAW_DEBUG
+	FVector TraceVec = GetActorForwardVector() * AttackRange;
+	FVector Center = GetActorLocation() + TraceVec * 0.5f;
+	float HalfHeight = AttackRange * 0.5f + AttackRadius;
+	FQuat CapsuleRot = FRotationMatrix::MakeFromZ(TraceVec).ToQuat();
+
+	// 공격 판정이 발생 : 녹색 아니면 빨강
+	FColor DrawColor = bResult ? FColor::Green : FColor::Red;
+	float DebugLifeTime = 5.0f;
+
+	DrawDebugCapsule(GetWorld(),
+		Center,
+		HalfHeight,
+		AttackRadius,
+		CapsuleRot,
+		DrawColor,
+		false,
+		DebugLifeTime);
+#endif
+
+	/*
+	FHitResult의 멤버 변수 Actor의 선언이 일반 참조로 선언된다면
+	해당 함수에서의 참조로 인해 제거돼야 할 액터가 메모리에 남아있는 문제가 발생할 수 있다.
+	이러한 문제를 방지하기 위해 FHitResult는 참조로부터 자유롭게 포인터 정보를
+	전달해주는 약 포인터 방식으로 멤버 변수를 선언했다.
+
+	-> 약 포인터로 지정된 액터에 접근하려면 IsValid 함수를 사용해 사용하려는
+	   액터가 유효한지 먼저 점검하고 사용해야한다.
+	*/
+
+	if (bResult)
+		if (HitResult.Actor.IsValid())
+		{
+			ABLOG(Warning, TEXT("Hit Actor Name : %s"), *HitResult.Actor->GetName());
+
+			// 대상 액터에 대미지를 전달
+			FDamageEvent DamageEvent;
+			HitResult.Actor->TakeDamage(50.0f, DamageEvent, GetController(), this);
+		}
 }

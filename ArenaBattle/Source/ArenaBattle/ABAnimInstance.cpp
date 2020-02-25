@@ -7,6 +7,7 @@ UABAnimInstance::UABAnimInstance()
 {
 	CurrentPawnSpeed = 0.0f;
 	IsInAir = false;
+	IsDead = false;
 
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> ATTACK_MONTAGE(TEXT("/Game/Book/Animations/SK_Mannequin_Skeleton_Montage.SK_Mannequin_Skeleton_Montage"));
 	if (ATTACK_MONTAGE.Succeeded())
@@ -20,7 +21,12 @@ void UABAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// TryGetPawnOwner 함수로 유효한 Pawn 오브젝트의 포인터를 받아오면
 	// 여기서 속력을 구해 CurrentPawnSpeed에 저장한다.
 	auto Pawn = TryGetPawnOwner();
-	if (::IsValid(Pawn))
+
+	// 유효하지 않으면 함수 종료
+	if (!::IsValid(Pawn)) return;
+
+	// 살아 있다면
+	if (!IsDead)
 	{
 		CurrentPawnSpeed = Pawn->GetVelocity().Size();
 
@@ -32,6 +38,8 @@ void UABAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UABAnimInstance::PlayAttackMontage()
 {
+	ABCHECK(!IsDead);
+
 	// 몽타주가 재생중이 아닐 경우
 	
 	// ABCharacter Class에서 IsAttacking를 통해 체크하므로 필요 없어짐
@@ -42,6 +50,8 @@ void UABAnimInstance::PlayAttackMontage()
 
 void UABAnimInstance::JumpToAttackMontageSection(int32 NewSection)
 {
+	ABCHECK(!IsDead);
+
 	ABCHECK(Montage_IsPlaying(AttackMontage));
 	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), AttackMontage);
 }
