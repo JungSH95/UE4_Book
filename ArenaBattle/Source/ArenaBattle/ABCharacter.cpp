@@ -3,6 +3,7 @@
 
 #include "ABCharacter.h"
 #include "ABAnimInstance.h"
+#include "ABWeapon.h"
 
 // 디버그 드로잉 : 다양한 그리기 함수들이 선언되있음. -> ex) 공격 범위를 시각적으로 표현
 #include "DrawDebugHelpers.h"
@@ -60,6 +61,12 @@ void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	FName WeaponSocket(TEXT("hand_rSocket"));
+	auto CurWeapon = GetWorld()->SpawnActor<AABWeapon>(FVector::ZeroVector, FRotator::ZeroRotator);
+
+	if (nullptr != CurWeapon)
+		CurWeapon->AttachToComponent(GetMesh(),
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
 }
 
 
