@@ -67,7 +67,7 @@ AABCharacter::AABCharacter()
 
 	HPBarWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
 	HPBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
-	static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("/Game/Book/UI/PB_HPBar.PB_HPBar_C"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("/Game/Book/UI/UI_HPBar.UI_HPBar_C"));
 	if (UI_HUD.Succeeded())
 	{
 		HPBarWidget->SetWidgetClass(UI_HUD.Class);
@@ -88,6 +88,21 @@ void AABCharacter::BeginPlay()
 		CurWeapon->AttachToComponent(GetMesh(),
 			FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
 	*/
+
+	/*     이거 때문에 개 고 생
+
+	UI 시스템은 플레이어 컨트롤러의 BeginPlay() 에서 생성된다.
+	따라서 이 클래스의 PostInitializeComponents()은 위젯 생성에 효능이 없어 BeginPlay()에서 작업을 해야한다.
+
+	-> 책에서는 PostInitializeComponents() 에 작성 : 4.21 전에는 가능했음 ---------------------
+	4.21 버전때 UI의 초기화가 BeginPlay 시점으로 변경 됨
+	*/
+	auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+	if (nullptr != CharacterWidget)
+	{
+		CharacterWidget->BindCharacterStat(CharacterStat);
+	}
+	// --------------------------------------------------------------------------------
 }
 
 bool AABCharacter::CanSetWeapon()
@@ -226,10 +241,6 @@ void AABCharacter::PostInitializeComponents()
 		ABAnim->SetDeadAnim();
 		SetActorEnableCollision(false);
 	});
-
-	auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget->GetUserWidgetObject());
-	if (nullptr != CharacterWidget)
-		CharacterWidget->BindCharacterStat(CharacterStat);
 }
 
 float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,

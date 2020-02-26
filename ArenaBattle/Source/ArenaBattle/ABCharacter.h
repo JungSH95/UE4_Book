@@ -81,7 +81,7 @@ public:
 	// -> 현재 사용하는 언리얼 엔진의 모듈들은 ArenaBattle.Build.cs 파일에서 확인 가능
 	// PublicDependencyModuleNames.AddRange에 "UMG" 추가 하면 위젯 컴포넌트를 사용 가능
 	UPROPERTY(VisibleAnywhere, Category = UI)
-		class UWidgetComponent* HPBarWidget;
+	class UWidgetComponent* HPBarWidget;
 
 private:
 	void UpDown(float NewAxisValue);
