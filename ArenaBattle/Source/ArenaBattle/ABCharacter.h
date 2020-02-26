@@ -76,6 +76,13 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UCameraComponent* Camera;
 
+	// 해당 선언 후 컴파일 진행 시 '확인할 수 없는 외부 참조'라는 메시지로 에러 발생
+	// 원인 : 현재 프로젝트 설정에 UI 관련된 엔진 모듈을 지정하지 않았기 때문
+	// -> 현재 사용하는 언리얼 엔진의 모듈들은 ArenaBattle.Build.cs 파일에서 확인 가능
+	// PublicDependencyModuleNames.AddRange에 "UMG" 추가 하면 위젯 컴포넌트를 사용 가능
+	UPROPERTY(VisibleAnywhere, Category = UI)
+		class UWidgetComponent* HPBarWidget;
+
 private:
 	void UpDown(float NewAxisValue);
 	void LeftRight(float NewAxisValue);
