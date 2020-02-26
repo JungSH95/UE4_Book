@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 
 #include "Components/WidgetComponent.h"
+#include "ABCharacterWidget.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -225,6 +226,10 @@ void AABCharacter::PostInitializeComponents()
 		ABAnim->SetDeadAnim();
 		SetActorEnableCollision(false);
 	});
+
+	auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+	if (nullptr != CharacterWidget)
+		CharacterWidget->BindCharacterStat(CharacterStat);
 }
 
 float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,

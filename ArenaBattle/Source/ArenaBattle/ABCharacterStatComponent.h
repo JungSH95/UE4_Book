@@ -7,6 +7,7 @@
 #include "ABCharacterStatComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnHPIsZeroDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnHPChangedDelegate);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ARENABATTLE_API UABCharacterStatComponent : public UActorComponent
@@ -33,10 +34,13 @@ protected:
 public:
 	void SetNewLevel(int32 NewLevel);
 	void SetDamage(float NewDamage);
+	void SetHP(float NewHP);
 	float GetAttack();
+	float GetHPRatio();
 
 	// 캐릭터에 의존성을 가지지 않도록 델리게이트를 사용
 	FOnHPIsZeroDelegate OnHPIsZero;
+	FOnHPChangedDelegate OnHPChanged;
 
 private:
 	struct FABCharacterData* CurrentStatData = nullptr;
@@ -48,5 +52,5 @@ private:
 	// 게임을 시작할 때마다 변경되므로 이 값을 보관하는 것은 의미가 없다.
 	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat,
 		Meta = (AllowPrivateAccess = true))
-	float CurremtHP;
+	float CurrentHP;
 };
