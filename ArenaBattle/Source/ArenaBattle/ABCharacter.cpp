@@ -61,14 +61,33 @@ void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	/*   hand_rSocket 에 무기 장착
 	FName WeaponSocket(TEXT("hand_rSocket"));
 	auto CurWeapon = GetWorld()->SpawnActor<AABWeapon>(FVector::ZeroVector, FRotator::ZeroRotator);
 
 	if (nullptr != CurWeapon)
 		CurWeapon->AttachToComponent(GetMesh(),
 			FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+	*/
 }
 
+bool AABCharacter::CanSetWeapon()
+{
+	return (nullptr == CurrentWeapon);
+}
+
+void AABCharacter::SetWeapon(AABWeapon* NewWeapon)
+{
+	ABCHECK(nullptr != NewWeapon && nullptr == CurrentWeapon);
+
+	FName WeaponSocket(TEXT("hand_rSocket"));
+	if (nullptr != NewWeapon)
+	{
+		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+		NewWeapon->SetOwner(this);
+		CurrentWeapon = NewWeapon;
+	}
+}
 
 // 흰색 마네킹과 동일한 방식으로 캐릭터를 동작하도록 만들기
 void AABCharacter::SetControlMode(EControlMode NewControlMode)
