@@ -5,6 +5,9 @@
 #include "ABAnimInstance.h"
 #include "ABWeapon.h"
 
+// 캐릭터에 부착해 캐릭터 스탯에 대한 관리를 액터 컴포넌트가 하도록
+#include "ABCharacterStatComponent.h"
+
 // 디버그 드로잉 : 다양한 그리기 함수들이 선언되있음. -> ex) 공격 범위를 시각적으로 표현
 #include "DrawDebugHelpers.h"
 
@@ -16,6 +19,8 @@ AABCharacter::AABCharacter()
 
 	SpringArm = CreateDefaultSubobject <USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject <UCameraComponent>(TEXT("CAMERA"));
+
+	CharacterStat = CreateDefaultSubobject<UABCharacterStatComponent>(TEXT("CHARACTERSTAT"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -200,6 +205,13 @@ void AABCharacter::PostInitializeComponents()
 	});
 
 	ABAnim->OnAttackHitCheck.AddUObject(this, &AABCharacter::AttackCheck);
+
+	CharacterStat->OnHPIsZero.AddLambda([this]() -> void
+	{
+		ABLOG(Warning, TEXT("OnHPIsZero"));
+		ABAnim->SetDeadAnim();
+		SetActorEnableCollision(false);
+	});
 }
 
 float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
@@ -208,12 +220,15 @@ float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	ABLOG(Warning, TEXT("Actor : %s took Damage : %f"), *GetName(), FinalDamage);
 	
+	/*
 	if (FinalDamage > 0.0f)
 	{
 		ABAnim->SetDeadAnim();
 		SetActorEnableCollision(false);
 	}
+	*/
 
+	CharacterStat->SetDamage(FinalDamage);
 	return FinalDamage;
 }
 
@@ -434,6 +449,6 @@ void AABCharacter::AttackCheck()
 
 			// 대상 액터에 대미지를 전달
 			FDamageEvent DamageEvent;
-			HitResult.Actor->TakeDamage(50.0f, DamageEvent, GetController(), this);
+			HitResult.Actor->TakeDamage(CharacterStat->GetAttack(), DamageEvent, GetController(), this);
 		}
 }
