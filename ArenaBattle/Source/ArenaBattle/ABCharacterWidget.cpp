@@ -32,16 +32,10 @@ void UABCharacterWidget::NativeConstruct()
 
 void UABCharacterWidget::UpdateHPWidget()
 {
-	ABLOG(Warning, TEXT("NUUUUUUUUUUUUUU   2   HPRATIO : %f"), 0.0f);
-
 	if (CurrentCharacterStat.IsValid())
 	{
-		ABLOG(Warning, TEXT("NUUUUUUUUUUUUUU   3   HPRATIO : %f"), 0.0f);
-
 		if (nullptr != HPProgressBar)
 		{
-			ABLOG(Warning, TEXT("NUUUUUUUUUUUUUU   4   HPRATIO : %f"), 0.0f);
-
 			HPProgressBar->SetPercent(CurrentCharacterStat->GetHPRatio());
 		}
 	}

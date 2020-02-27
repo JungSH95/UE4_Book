@@ -1,2 +1,0 @@
-1. 게임 플레이 누른 상태 중에 틸드(~) 키를 누르면 콘솔 명령어 입력 창이 나온다.
-	-> diplayerall PlayController ControlRotation  :: 플레이어의 회전 값이 나타남
