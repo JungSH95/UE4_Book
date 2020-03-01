@@ -16,6 +16,8 @@ UFloatingPawnMovement에 비해 가지는 장점
 : 멀티 플레이 네트워크 환경에서 캐릭터들의 움직임을 자동으로 동기화
 */
 
+DECLARE_MULTICAST_DELEGATE(FOnAttackEndDelegate);
+
 UCLASS()
 class ARENABATTLE_API AABCharacter : public ACharacter
 {
@@ -86,6 +88,10 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = UI)
 	class UWidgetComponent* HPBarWidget;
 
+	// AI 컨트롤러에서도 공격 명령을 내릴 수 있도록 접근권한 public으로 변경
+	void Attack();
+	FOnAttackEndDelegate OnAttackEnd;
+
 private:
 	void UpDown(float NewAxisValue);
 	void LeftRight(float NewAxisValue);
@@ -93,7 +99,6 @@ private:
 	void Turn(float NewAxisValue);
 
 	void ViewChange();
-	void Attack();
 
 	/*
 	언리얼에서 델리게이트는 C++ 객체에만 사용할 수 있는 델리게이트와
