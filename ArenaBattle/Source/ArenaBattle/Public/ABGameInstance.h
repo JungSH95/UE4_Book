@@ -3,10 +3,9 @@
 #pragma once
 
 #include "ArenaBattle.h"
-
 #include "Engine/DataTable.h"
-
 #include "Engine/GameInstance.h"
+#include "Engine/StreamableManager.h"
 #include "ABGameInstance.generated.h"
 
 /*
@@ -50,6 +49,10 @@ public:
 	virtual void Init() override;
 
 	FABCharacterData* GetABCharacterData(int32 Level);
+
+	// 게임 진행 중에도 비동기 방식으로 애셋을 로딩하도록 제공
+	// 이 매니저 클래스는 프로젝트에서 하나만 활성화하는 것이 좋다.
+	FStreamableManager StreamableManager;
 
 private:
 	UPROPERTY()

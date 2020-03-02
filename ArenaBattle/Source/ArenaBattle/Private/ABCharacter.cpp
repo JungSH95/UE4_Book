@@ -16,6 +16,10 @@
 
 #include "ABAIController.h"
 
+#include "ABCharacterSetting.h"
+
+#include "ABGameInstance.h"
+
 // Sets default values
 AABCharacter::AABCharacter()
 {
@@ -78,6 +82,13 @@ AABCharacter::AABCharacter()
 
 	AIControllerClass = AABAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	/*	에셋 목록을 읽어들인 후 로그 출력
+	auto DefaultSetting = GetDefault<UABCharacterSetting>();
+	if (DefaultSetting->CharacterAssets.Num() > 0)
+		for (auto CharacterAsset : DefaultSetting->CharacterAssets)
+			ABLOG(Warning, TEXT("Character Asset : %s"), *CharacterAsset.ToString());
+	*/
 }
 
 // Called when the game starts or when spawned
@@ -108,6 +119,21 @@ void AABCharacter::BeginPlay()
 		CharacterWidget->BindCharacterStat(CharacterStat);
 	}
 	// --------------------------------------------------------------------------------
+
+	if (!IsPlayerControlled())
+	{
+		auto DefaultSetting = GetDefault<UABCharacterSetting>();
+		int32 RandIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() - 1);
+		CharacterAssetToLoad = DefaultSetting->CharacterAssets[RandIndex];
+
+		auto ABGameInstance = Cast<UABGameInstance>(GetGameInstance());
+		if (nullptr != ABGameInstance)
+			// 비동기 방식으로 에셋을 로딩하는 함수 : RequestAsyncLoad()
+			// FStreamableDelegate 형식의 델리게이트를 넘겨줄 경우, 애셋이 로딩을 완료하면 해당 델리게이트에 연결된
+			// 함수롤 호출해준다.
+			AssetStreamingHandle = ABGameInstance->StreamableManager.RequestAsyncLoad(CharacterAssetToLoad,
+				FStreamableDelegate::CreateUObject(this, &AABCharacter::OnAssetLoadCompleted));
+	}
 }
 
 bool AABCharacter::CanSetWeapon()
@@ -509,4 +535,12 @@ void AABCharacter::AttackCheck()
 			FDamageEvent DamageEvent;
 			HitResult.Actor->TakeDamage(CharacterStat->GetAttack(), DamageEvent, GetController(), this);
 		}
+}
+
+void AABCharacter::OnAssetLoadCompleted()
+{
+	AssetStreamingHandle->ReleaseHandle();
+	TSoftObjectPtr<USkeletalMesh> LoadedAssetPath(CharacterAssetToLoad);
+	if (LoadedAssetPath.IsValid())
+		GetMesh()->SetSkeletalMesh(LoadedAssetPath.Get());
 }
