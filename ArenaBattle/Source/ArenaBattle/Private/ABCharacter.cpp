@@ -19,6 +19,7 @@
 #include "ABCharacterSetting.h"
 
 #include "ABGameInstance.h"
+#include "ABPlayerController.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -89,6 +90,16 @@ AABCharacter::AABCharacter()
 		for (auto CharacterAsset : DefaultSetting->CharacterAssets)
 			ABLOG(Warning, TEXT("Character Asset : %s"), *CharacterAsset.ToString());
 	*/
+
+	AssetIndex = 4;
+
+	SetActorHiddenInGame(true);
+	HPBarWidget->SetHiddenInGame(true);
+
+	// 4.24 에서는 바로 접근 불가능 bCanBeDamaged = false;
+	SetCanBeDamaged(false);
+
+	DeadTimer = 5.0f;
 }
 
 // Called when the game starts or when spawned
@@ -115,11 +126,10 @@ void AABCharacter::BeginPlay()
 	*/
 	auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget->GetUserWidgetObject());
 	if (nullptr != CharacterWidget)
-	{
 		CharacterWidget->BindCharacterStat(CharacterStat);
-	}
 	// --------------------------------------------------------------------------------
 
+	/*
 	if (!IsPlayerControlled())
 	{
 		auto DefaultSetting = GetDefault<UABCharacterSetting>();
@@ -134,6 +144,112 @@ void AABCharacter::BeginPlay()
 			AssetStreamingHandle = ABGameInstance->StreamableManager.RequestAsyncLoad(CharacterAssetToLoad,
 				FStreamableDelegate::CreateUObject(this, &AABCharacter::OnAssetLoadCompleted));
 	}
+	*/
+
+
+	// Chapter 14 - 게임 플레이의 제작
+	bIsPlayer = IsPlayerControlled();
+	if (bIsPlayer)
+	{
+		ABPlayerController = Cast<AABPlayerController>(GetController());
+		ABCHECK(nullptr != ABPlayerController);
+	}
+	else
+	{
+		ABAIController = Cast<AABAIController>(GetController());
+		ABCHECK(nullptr != ABAIController);
+	}
+
+	auto DefaultSetting = GetDefault<UABCharacterSetting>();
+
+	if (bIsPlayer)
+	{
+		AssetIndex = 4;
+	}
+	else
+		AssetIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() - 1);
+
+	CharacterAssetToLoad = DefaultSetting->CharacterAssets[AssetIndex];
+	auto ABGameInstance = Cast<UABGameInstance>(GetGameInstance());
+	ABCHECK(nullptr != ABGameInstance);
+	AssetStreamingHandle = ABGameInstance->StreamableManager.RequestAsyncLoad(CharacterAssetToLoad,
+		FStreamableDelegate::CreateUObject(this, &AABCharacter::OnAssetLoadCompleted));
+	SetCharacterState(ECharacterState::LOADING);
+}
+
+void AABCharacter::SetCharacterState(ECharacterState NewState)
+{
+	ABCHECK(CurrentState != NewState);
+	CurrentState = NewState;
+
+	switch (CurrentState)
+	{
+	case ECharacterState::LOADING:
+	{
+		if (bIsPlayer)
+			DisableInput(ABPlayerController);
+
+		SetActorHiddenInGame(true);
+		HPBarWidget->SetHiddenInGame(true);
+		SetCanBeDamaged(false);
+		break;
+	}
+	case ECharacterState::READY:
+	{
+		SetActorHiddenInGame(false);
+		HPBarWidget->SetHiddenInGame(false);
+		SetCanBeDamaged(true);
+
+		CharacterStat->OnHPIsZero.AddLambda([this]() -> void {
+			SetCharacterState(ECharacterState::DEAD);
+		});
+
+		auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+		ABCHECK(nullptr != CharacterWidget);
+		CharacterWidget->BindCharacterStat(CharacterStat);
+
+		if (bIsPlayer)
+		{
+			SetControlMode(EControlMode::DIABLO);
+			GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+			EnableInput(ABPlayerController);
+		}
+		else
+		{
+			SetControlMode(EControlMode::NPC);
+			GetCharacterMovement()->MaxWalkSpeed = 400.0f;
+			ABAIController->RunAI();
+		}
+		break;
+	}
+	case ECharacterState::DEAD:
+	{
+		SetActorEnableCollision(false);
+		GetMesh()->SetHiddenInGame(false);
+		HPBarWidget->SetHiddenInGame(true);
+		ABAnim->SetDeadAnim();
+		SetCanBeDamaged(false);
+
+		if (bIsPlayer)
+			DisableInput(ABPlayerController);
+		else
+			ABAIController->StopAI();
+
+		GetWorld()->GetTimerManager().SetTimer(DeadTimerHandle, FTimerDelegate::CreateLambda([this]() -> void
+		{
+			if (bIsPlayer)
+				ABPlayerController->RestartLevel();
+			else
+				Destroy();
+		}), DeadTimer, false);
+		break;
+	}
+	}
+}
+
+ECharacterState AABCharacter::GetCharacterState() const
+{
+	return CurrentState;
 }
 
 bool AABCharacter::CanSetWeapon()
@@ -280,10 +396,12 @@ void AABCharacter::PostInitializeComponents()
 	});
 }
 
+//  14장에서 게임 플레이 제작으로 변경하면서 해당 기능을 READT 스테이트에서 구현
 void AABCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
+	/*
 	if (IsPlayerControlled())
 	{
 		SetControlMode(EControlMode::DIABLO);
@@ -294,7 +412,9 @@ void AABCharacter::PossessedBy(AController* NewController)
 		SetControlMode(EControlMode::NPC);
 		GetCharacterMovement()->MaxWalkSpeed = 300.0f;
 	}
+	*/
 }
+
 
 float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
@@ -541,6 +661,13 @@ void AABCharacter::OnAssetLoadCompleted()
 {
 	AssetStreamingHandle->ReleaseHandle();
 	TSoftObjectPtr<USkeletalMesh> LoadedAssetPath(CharacterAssetToLoad);
+	
+	/*
 	if (LoadedAssetPath.IsValid())
 		GetMesh()->SetSkeletalMesh(LoadedAssetPath.Get());
+	*/
+
+	ABCHECK(LoadedAssetPath.IsValid());
+	GetMesh()->SetSkeletalMesh(LoadedAssetPath.Get());
+	SetCharacterState(ECharacterState::READY);
 }

@@ -23,6 +23,8 @@ public:
 	static const FName PatrolPosKey;
 	static const FName TargetKey;
 
+	void RunAI();
+	void StopAI();
 private:
 	// 비헤이비어 트리로 변경
 	//void OnRepeatTimer();

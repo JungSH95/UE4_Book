@@ -27,6 +27,9 @@ public:
 	// Sets default values for this character's properties
 	AABCharacter();
 
+	void SetCharacterState(ECharacterState NewState);
+	ECharacterState GetCharacterState() const;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -58,6 +61,7 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 		class AController* EventInstigator, AActor* DamageCauser) override;
 
+	// 14장에서 게임 플레이 제작으로 변경하면서 해당 기능을 READT 스테이트에서 구현
 	virtual void PossessedBy(AController* NewController) override;
 
 	// Called to bind functionality to input
@@ -159,6 +163,28 @@ private:
 		Meta = (AllowPrivateAccess = true))
 	float AttackRadius;
 
+	int32 AssetIndex = 0;
+
 	FSoftObjectPath CharacterAssetToLoad = FSoftObjectPath(nullptr);
 	TSharedPtr<struct FStreamableHandle> AssetStreamingHandle;
+
+	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly,
+		Category = State, Meta = (AllowPrivateAccess = true))
+	ECharacterState CurrentState;
+	
+	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly,
+		Category = State, Meta = (AllowPrivateAccess = true))
+	bool bIsPlayer;
+
+	UPROPERTY()
+	class AABAIController* ABAIController;
+
+	UPROPERTY()
+	class AABPlayerController* ABPlayerController;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = State,
+		Meta = (AllowPrivateAccess = true))
+		float DeadTimer;
+
+	FTimerHandle DeadTimerHandle = { };
 };
