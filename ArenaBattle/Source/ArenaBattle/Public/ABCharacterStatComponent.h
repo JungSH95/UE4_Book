@@ -35,8 +35,9 @@ public:
 	void SetNewLevel(int32 NewLevel);
 	void SetDamage(float NewDamage);
 	void SetHP(float NewHP);
-	float GetAttack();
-	float GetHPRatio();
+	float GetAttack() const;
+	float GetHPRatio() const;
+	int32 GetDropExp() const;
 
 	// 캐릭터에 의존성을 가지지 않도록 델리게이트를 사용
 	FOnHPIsZeroDelegate OnHPIsZero;

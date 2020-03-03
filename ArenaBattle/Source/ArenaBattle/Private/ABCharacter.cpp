@@ -264,6 +264,11 @@ ECharacterState AABCharacter::GetCharacterState() const
 	return CurrentState;
 }
 
+int32 AABCharacter::GetExp() const
+{
+	return CharacterStat->GetDropExp();
+}
+
 bool AABCharacter::CanSetWeapon()
 {
 	return (nullptr == CurrentWeapon);
@@ -432,7 +437,7 @@ float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	class AController* EventInstigator, AActor* DamageCauser)
 {
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	ABLOG(Warning, TEXT("Actor : %s took Damage : %f"), *GetName(), FinalDamage);
+	//ABLOG(Warning, TEXT("Actor : %s took Damage : %f"), *GetName(), FinalDamage);
 	
 	/*
 	if (FinalDamage > 0.0f)
@@ -443,6 +448,19 @@ float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	*/
 
 	CharacterStat->SetDamage(FinalDamage);
+
+	// 데미지를 가했는데 죽었으면
+	if (CurrentState == ECharacterState::DEAD)
+	{
+		// 이벤트의 가해자가 플레이어이면
+		if (EventInstigator->IsPlayerController())
+		{
+			auto instigator = Cast<AABPlayerController>(EventInstigator);
+			ABCHECK(nullptr != instigator, 0.0f);
+			instigator->NPCKill(this);
+		}
+	}
+
 	return FinalDamage;
 }
 

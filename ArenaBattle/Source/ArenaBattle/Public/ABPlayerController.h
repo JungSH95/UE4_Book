@@ -37,6 +37,8 @@ public:
 
 	class UABHUDWidget* GetHUDWidget() const;
 
+	void NPCKill(class AABCharacter* KilledNPC) const;
+
 /*
 폰을 조종하기 위한 입력 로직은 폰 클래스에 구현하는 것이 일반적
 언리얼 엔진 입력 시스템 : 입력 -> 플레이어 컨트롤러 -> 폰 (플레이어 컨트롤러를 거쳐서 폰에 전달)
@@ -54,4 +56,6 @@ private:
 	UPROPERTY()
 	class UABHUDWidget* HUDWidget;
 
+	UPROPERTY()
+	class AABPlayerState* ABPlayerState;
 };
