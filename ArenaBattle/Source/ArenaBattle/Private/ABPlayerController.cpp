@@ -2,6 +2,17 @@
 
 
 #include "ABPlayerController.h"
+#include "ABHUDWidget.h"
+#include "ABPlayerState.h"
+
+AABPlayerController::AABPlayerController()
+{
+	static ConstructorHelpers::FClassFinder<UABHUDWidget> UI_HUD_C(TEXT("/Game/Book/UI/UI_HUD"));
+	if (UI_HUD_C.Succeeded())
+	{
+		HUDWidgetClass = UI_HUD_C.Class;
+	}
+}
 
 void AABPlayerController::BeginPlay()
 {
@@ -15,6 +26,16 @@ void AABPlayerController::BeginPlay()
 	*/
 	FInputModeGameOnly InputMode;
 	SetInputMode(InputMode);
+
+	HUDWidget = CreateWidget<UABHUDWidget>(this, HUDWidgetClass);
+	ABCHECK(nullptr != HUDWidget);
+	HUDWidget->AddToViewport(1);
+
+	// HUD 위젯과 플레이어 스테이트를 연결
+	auto ABPlayerState = Cast<AABPlayerState>(PlayerState);
+	ABCHECK(nullptr != ABPlayerState);
+	HUDWidget->BindPlayerState(ABPlayerState);
+	ABPlayerState->OnPlayerStateChanged.Broadcast();
 }
 
 void AABPlayerController::PostInitializeComponents()
@@ -27,6 +48,11 @@ void AABPlayerController::OnPossess(APawn* aPawn)
 {
 	ABLOG_S(Warning);
 	Super::OnPossess(aPawn);
+}
+
+UABHUDWidget* AABPlayerController::GetHUDWidget() const
+{
+	return HUDWidget;
 }
 
 /*

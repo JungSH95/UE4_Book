@@ -17,19 +17,25 @@ class ARENABATTLE_API AABPlayerController : public APlayerController
 protected:
 	virtual void BeginPlay() override;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
+	TSubclassOf<class UABHUDWidget> HUDWidgetClass;
+
 public:
+	AABPlayerController();
+
 	/*
 		폰과 플레이어 컨트롤러가 생성되는 시점은 각 액터의
 		PostInitializeComponents 함수로 파악할 수 있다.
 		빙의를 진행하는 시점은 플레이어 컨트롤러의 Possess,
 		폰의 PossessedBy 함수로 파악 가능하다.
 	*/
-
 	virtual void PostInitializeComponents() override;
 
 	// UE4 4.22 버전부터 Possess(APawn* aPawn)는 상속을 받을 수 없게 되었다.
 	// 해결법 OnPossess으로 사용 가능하다.
 	virtual void OnPossess(APawn* aPawn) override;
+
+	class UABHUDWidget* GetHUDWidget() const;
 
 /*
 폰을 조종하기 위한 입력 로직은 폰 클래스에 구현하는 것이 일반적
@@ -43,4 +49,9 @@ protected:
 private:
 	void LeftRight(float NewAxisValue);
 */
+
+private:
+	UPROPERTY()
+	class UABHUDWidget* HUDWidget;
+
 };
