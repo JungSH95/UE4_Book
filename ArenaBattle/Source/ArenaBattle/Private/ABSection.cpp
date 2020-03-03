@@ -2,6 +2,8 @@
 
 
 #include "ABSection.h"
+#include "ABCharacter.h"
+#include "ABItemBox.h"
 
 // Sets default values
 AABSection::AABSection()
@@ -55,6 +57,9 @@ AABSection::AABSection()
 	}
 
 	bNoBattle = false;
+
+	EnemySpawnTime = 2.0f;
+	ItemBoxSpawnTime = 5.0f;
 }
 
 // 에디터 작업에서 선택한 액터의 속성이나 트랜스폼 정보가 변경 될 때 이 함수가 실행 함.
@@ -87,6 +92,19 @@ void AABSection::SetState(ESectionState NewState)
 		for (UBoxComponent* GateTrigger : GateTriggers)
 			GateTrigger->SetCollisionProfileName(TEXT("NoCollision"));
 		OperateGates(false);
+
+		GetWorld()->GetTimerManager().SetTimer(SpawnNPCTimerHandle,
+			FTimerDelegate::CreateUObject(this, &AABSection::OnNPCSpawn),
+			EnemySpawnTime, false);
+
+		GetWorld()->GetTimerManager().SetTimer(SpawnItemBoxTimerHandle, 
+			FTimerDelegate::CreateLambda([this]() -> void
+		{
+			FVector2D RandXY = FMath::RandPointInCircle(600.0f);
+			GetWorld()->SpawnActor<AABItemBox>(GetActorLocation() +
+				FVector(RandXY, 30.0f), FRotator::ZeroRotator);
+		}), ItemBoxSpawnTime, false);
+
 		break;
 	case ESectionState::COMPLETE:
 		Trigger->SetCollisionProfileName(TEXT("NoCollision"));
@@ -140,4 +158,10 @@ void AABSection::OnGateTriggerBeginOverlap(UPrimitiveComponent* OverlappedCompon
 		auto NewSection = GetWorld()->SpawnActor<AABSection>(NewLocation, FRotator::ZeroRotator);
 	else
 		ABLOG(Warning, TEXT("New section area is not empty."));
+}
+
+void AABSection::OnNPCSpawn()
+{
+	GetWorld()->SpawnActor<AABCharacter>(GetActorLocation() + FVector::UpVector *
+		88.0f, FRotator::ZeroRotator);
 }
