@@ -10,19 +10,15 @@
 
 // 디버그 드로잉 : 다양한 그리기 함수들이 선언되있음. -> ex) 공격 범위를 시각적으로 표현
 #include "DrawDebugHelpers.h"
-
 #include "Components/WidgetComponent.h"
 #include "ABCharacterWidget.h"
-
 #include "ABAIController.h"
-
 #include "ABCharacterSetting.h"
-
 #include "ABGameInstance.h"
 #include "ABPlayerController.h"
-
 #include "ABPlayerState.h"
 #include "ABHUDWidget.h"
+#include "ABGameMode.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -72,7 +68,7 @@ AABCharacter::AABCharacter()
 	// 캐릭터의 캡슐 컴포넌트에 있는 콜리전 프리셋을 기존 Pawn에서 ABCharacter로 설정
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("ABCharacter"));
 
-	AttackRange = 200.0f;
+	AttackRange = 80.0f;
 	AttackRadius = 50.0f;
 
 	HPBarWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
@@ -200,6 +196,16 @@ void AABCharacter::SetCharacterState(ECharacterState NewState)
 			ABCHECK(nullptr != ABPlayerState);
 			CharacterStat->SetNewLevel(ABPlayerState->GetCharacterLevel());
 		}
+		// 게임 스코어를 기반으로 NPC 능력시 설정
+		else
+		{
+			auto ABGameMode = Cast<AABGameMode>(GetWorld()->GetAuthGameMode());
+			ABCHECK(nullptr != ABGameMode);
+			int32 TargetLevel = FMath::CeilToInt(((float)ABGameMode->GetScore() * 0.8f));
+			int32 FinalLevel = FMath::Clamp<int32>(TargetLevel, 1, 20);
+			ABLOG(Warning, TEXT("New NPC Level : %d"), FinalLevel);
+			CharacterStat->SetNewLevel(FinalLevel);
+		}
 
 		SetActorHiddenInGame(true);
 		HPBarWidget->SetHiddenInGame(true);
@@ -269,14 +275,40 @@ int32 AABCharacter::GetExp() const
 	return CharacterStat->GetDropExp();
 }
 
+// 무기 유무에 따른 공격 범위
+float AABCharacter::GetFinalAttackRange() const
+{
+	return (nullptr != CurrentWeapon) ? CurrentWeapon->GetAttackRange() : AttackRange;
+}
+
+float AABCharacter::GetFinalAttackDamage() const
+{
+	float AttackDamage = (nullptr != CurrentWeapon) ? (CharacterStat->GetAttack() +
+		CurrentWeapon->GetAttackDamage()) : CharacterStat->GetAttack();
+
+	float AttackModifier = (nullptr != CurrentWeapon) ? CurrentWeapon->GetAttackModifier() : 1.0f;
+
+	return AttackDamage * AttackModifier;
+}
+
 bool AABCharacter::CanSetWeapon()
 {
-	return (nullptr == CurrentWeapon);
+	//return (nullptr == CurrentWeapon);
+	return true;
 }
 
 void AABCharacter::SetWeapon(AABWeapon* NewWeapon)
 {
-	ABCHECK(nullptr != NewWeapon && nullptr == CurrentWeapon);
+	//ABCHECK(nullptr != NewWeapon && nullptr == CurrentWeapon);
+	ABCHECK(nullptr != NewWeapon);
+
+	// 무기 보유중일 경우 기존 무기 삭제
+	if (nullptr != CurrentWeapon)
+	{
+		CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentWeapon->Destroy();
+		CurrentWeapon = nullptr;
+	}
 
 	FName WeaponSocket(TEXT("hand_rSocket"));
 	if (nullptr != NewWeapon)
@@ -626,6 +658,8 @@ void AABCharacter::AttackEndComboState()
 
 void AABCharacter::AttackCheck()
 {
+	float FinalAttackRange = GetFinalAttackRange();
+
 	// 충돌된 액터에 관련된 정보를 가질 구조체
 	FHitResult HitResult;
 
@@ -636,7 +670,7 @@ void AABCharacter::AttackCheck()
 
 		// 도형의 탐색 영역
 		GetActorLocation(),
-		GetActorLocation() + GetActorForwardVector() * AttackRange,
+		GetActorLocation() + GetActorForwardVector() * FinalAttackRange,
 		
 		FQuat::Identity,
 
@@ -651,9 +685,9 @@ void AABCharacter::AttackCheck()
 
 	// 공격 탐지 범위 시각적으로 표현 해주기
 #if ENABLE_DRAW_DEBUG
-	FVector TraceVec = GetActorForwardVector() * AttackRange;
+	FVector TraceVec = GetActorForwardVector() * FinalAttackRange;
 	FVector Center = GetActorLocation() + TraceVec * 0.5f;
-	float HalfHeight = AttackRange * 0.5f + AttackRadius;
+	float HalfHeight = FinalAttackRange * 0.5f + AttackRadius;
 	FQuat CapsuleRot = FRotationMatrix::MakeFromZ(TraceVec).ToQuat();
 
 	// 공격 판정이 발생 : 녹색 아니면 빨강
@@ -687,7 +721,7 @@ void AABCharacter::AttackCheck()
 
 			// 대상 액터에 대미지를 전달
 			FDamageEvent DamageEvent;
-			HitResult.Actor->TakeDamage(CharacterStat->GetAttack(), DamageEvent, GetController(), this);
+			HitResult.Actor->TakeDamage(GetFinalAttackDamage(), DamageEvent, GetController(), this);
 		}
 }
 

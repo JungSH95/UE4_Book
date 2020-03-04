@@ -21,6 +21,7 @@ public:
 	// 플레이어가 로그인을 완료하면 이벤트 함수 호출
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	void AddScore(class AABPlayerController *ScoredPlayer);
+	int32 GetScore() const;
 
 private:
 	UPROPERTY()
