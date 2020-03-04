@@ -38,6 +38,7 @@ public:
 	class UABHUDWidget* GetHUDWidget() const;
 
 	void NPCKill(class AABCharacter* KilledNPC) const;
+	void AddGameScore() const;
 
 /*
 폰을 조종하기 위한 입력 로직은 폰 클래스에 구현하는 것이 일반적

@@ -449,6 +449,10 @@ float AABCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 
 	CharacterStat->SetDamage(FinalDamage);
 
+	/*
+	아래의 공격 받을 때마다 instigator를 검사하는 방식보다 소멸된 때 LastHitBy를 사용해
+	처리하는 것이 효율적, 학습을 위해 2가지 방법 사용해 본 것
+	*/
 	// 데미지를 가했는데 죽었으면
 	if (CurrentState == ECharacterState::DEAD)
 	{
