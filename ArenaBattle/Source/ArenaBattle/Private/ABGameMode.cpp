@@ -19,6 +19,8 @@ AABGameMode::AABGameMode()
 	PlayerStateClass = AABPlayerState::StaticClass();
 
 	GameStateClass = AABGameState::StaticClass();
+
+	ScoreToClear = 2;
 }
 
 void AABGameMode::PostInitializeComponents()
@@ -53,6 +55,26 @@ void AABGameMode::AddScore(class AABPlayerController *ScoredPlayer)
 	}
 
 	ABGameState->AddGameScore();
+
+	// 클리어 조건 확인
+	if (GetScore() >= ScoreToClear)
+	{
+		// 클리어 상태로 변경
+		ABGameState->SetGameCleared();
+
+		// 게임에서 동작하는 모든 폰을 멈추기
+		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
+			(*It)->TurnOff();
+
+		// 플레이어 가져오기
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			const auto ABPlayerController = Cast<AABPlayerController>(It->Get());
+			if (nullptr != ABPlayerController)
+				// 결과창 표시
+				ABPlayerController->ShowResultUI();
+		}
+	}
 }
 
 int32 AABGameMode::GetScore() const

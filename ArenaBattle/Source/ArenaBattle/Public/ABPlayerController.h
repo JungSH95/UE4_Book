@@ -39,6 +39,10 @@ public:
 
 	void NPCKill(class AABCharacter* KilledNPC) const;
 	void AddGameScore() const;
+	
+	void ChangeInputMode(bool bGameMode = true);
+
+	void ShowResultUI();
 
 /*
 폰을 조종하기 위한 입력 로직은 폰 클래스에 구현하는 것이 일반적
@@ -46,12 +50,19 @@ public:
 
 플레이어 컨트롤러에 특정 입력을 처리하는 코드를 구현하면 해당 입력은 폰에게 전달되지 않는다.
 -> 플레이어 컨트롤러에서 처리 & 필터링
-
+*/
 protected:
 	virtual void SetupInputComponent() override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
+	TSubclassOf<class UABGameplayWidget> MenuWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
+	TSubclassOf<class UABGameplayResultWidget> ResultWidgetClass;
+
 private:
-	void LeftRight(float NewAxisValue);
-*/
+//	void LeftRight(float NewAxisValue);
+	void OnGamePause();
 
 private:
 	UPROPERTY()
@@ -59,4 +70,13 @@ private:
 
 	UPROPERTY()
 	class AABPlayerState* ABPlayerState;
+
+	UPROPERTY()
+	class UABGameplayWidget* MenuWidget;
+
+	UPROPERTY()
+	class UABGameplayResultWidget* ResultWidget;
+
+	FInputModeGameOnly GameInputMode;
+	FInputModeUIOnly UIInputMode;
 };
