@@ -163,7 +163,11 @@ void AABCharacter::BeginPlay()
 
 	if (bIsPlayer)
 	{
-		AssetIndex = 4;
+		//AssetIndex = 4;
+
+		auto ABPlayerStat = Cast<AABPlayerState>(GetPlayerState());
+		ABCHECK(nullptr != ABPlayerStat);
+		AssetIndex = ABPlayerStat->GetCharacterIndex();
 	}
 	else
 		AssetIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() - 1);
